@@ -1,0 +1,27 @@
+{
+  "name": "work-chat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ytwwww/Work-Chat.git"
+  },
+  "author": "Ya-Tzu Wang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ytwwww/Work-Chat/issues"
+  },
+  "homepage": "https://github.com/ytwwww/Work-Chat#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.2",
+    "mongoose": "^5.13.2"
+  }
+}
