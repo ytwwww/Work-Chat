@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
   jobTitle: { type: String, required: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  convos: { type: [mongoose.Types.ObjectId], default: []},
 });
 
 UserSchema.pre("save", function (next) {
@@ -23,10 +24,10 @@ UserSchema.pre("save", function (next) {
   }
 });
 
-UserSchema.statics.findByUsernamePassword = function (email, password) {
+UserSchema.statics.findByUsernamePassword = function (username, password) {
   const user = this;
 
-  return User.findOne({ email: email }).then((user) => {
+  return User.findOne({ username: username }).then((user) => {
     if (!user) {
       return Promise.reject();
     }
