@@ -6,10 +6,11 @@ const UserSchema = new mongoose.Schema({
   jobTitle: { type: String, required: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  convos: { type: [mongoose.Types.ObjectId], default: []},
+  convos: { type: [mongoose.Types.ObjectId], default: [] },
 });
 
 UserSchema.pre("save", function (next) {
+  console.log(this);
   const user = this;
 
   if (user.isModified("password")) {

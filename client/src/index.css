@@ -14,6 +14,6 @@ code {
 
 html body {
   background: #c9d6ff;
-  background: -webkit-linear-gradient(to top, #e2e2e2, #c9d6ff);
-  background: linear-gradient(to top, #e2e2e2, #c9d6ff);
+  background: -webkit-linear-gradient(90deg, #e2e2e2, #c9d6ff);
+  background: linear-gradient(90deg, #e2e2e2, #c9d6ff);
 }

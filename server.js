@@ -34,7 +34,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      expires: 600000,
+      expires: 6000000,
       httpOnly: true,
     },
   })
@@ -80,7 +80,7 @@ const createConvo = (from, to, content, res) => {
               convos: newConvos,
             }).then(
               (user) => {
-                log(user);
+                // log(user);
               },
               (error) => {
                 res.status(500).send(error);
@@ -91,9 +91,9 @@ const createConvo = (from, to, content, res) => {
             res.status(500).send(error);
           }
         );
-        res.send(convo);
-        return;
       }
+      res.send(convo);
+      return;
     },
     (error) => {
       // 400 for bad request
@@ -149,9 +149,9 @@ app.post("/api/users/login", (req, res) => {
     .then((user) => {
       // Add the user's id to the session cookie.
       req.session.loggedin = true;
-      req.session._id = user._id;
-      log("Logged in");
-      res.send({ loggedin: true, _id: user._id });
+      req.session.user = user;
+      log(user.username + " logged in");
+      res.send(user);
       return;
     })
     .catch((error) => {
@@ -180,8 +180,8 @@ app.get("/api/users/logout", (req, res) => {
 // A route to check if a user is logged in on the session cookie
 app.get("/api/users/check-session", (req, res) => {
   if (req.session.loggedin) {
-    log("session exists");
-    res.send({ loggedin: req.session.loggedin, _id: req.session._id });
+    log(req.session.user.username + "'s session exists");
+    res.send(req.session.user);
   } else {
     log("no session");
     res.status(401).send();
@@ -196,19 +196,14 @@ app.get("/api/users/check-session", (req, res) => {
 // }
 /** User routes below **/
 // A route to create a user
-// app.post("/api/users", authenticate, (req, res) => {
 app.post("/api/users", (req, res) => {
-  const user = new User({
-    username: req.body.username,
-    password: req.body.password,
-    fullName: req.body.fullName,
-    jobTitle: req.body.jobTitle,
-    convos: [],
-  });
-
+  const user = new User(req.body);
   // Save the user
   user.save().then(
     (user) => {
+      req.session.loggedin = true;
+      req.session.user = user;
+      log(user.username + " registered");
       res.send(user);
       return;
     },
@@ -220,13 +215,29 @@ app.post("/api/users", (req, res) => {
   );
 });
 
-// TODO
+/*
+A route to create multiple users
+
+Request Body Expects:
+[{user1}, {user2}, ...]
+*/
+// app.post("/api/users/multiple", (req, res) => {
+//   const userList = req.body;
+//   User.insertMany(userList)
+//     .then((users) => {
+//       res.send(users);
+//     })
+//     .catch((err) => {
+//       res.status(400).send(err);
+//       return;
+//     });
+// });
+
 // A route to get all users
-// app.get("/api/users", authenticate, (req, res) => {
-app.get("/api/users", (req, res) => {
+app.get("/api/users", authenticate, (req, res) => {
   User.find()
-    .then((posts) => {
-      res.send(posts);
+    .then((users) => {
+      res.send(users);
       return;
     })
     .catch((error) => {
@@ -235,20 +246,20 @@ app.get("/api/users", (req, res) => {
     });
 });
 
-// A route to get convo between 2 users if it exists
-app.get("/api/convos/:id1/:id2", (req, res) => {
-  const id1 = req.params.id1;
-  const id2 = req.params.id2;
-  Convo.findByTwoUsers(id1, id2)
-    .then((convo) => {
-      res.send(convo);
-    })
-    .catch((error) => {
-      log("Failed to find convo");
-      res.status(404).send();
-      return;
-    });
-});
+// // A route to get convo between 2 users if it exists
+// app.get("/api/convos/:id1/:id2", (req, res) => {
+//   const id1 = req.params.id1;
+//   const id2 = req.params.id2;
+//   Convo.findByTwoUsers(id1, id2)
+//     .then((convo) => {
+//       res.send(convo);
+//     })
+//     .catch((error) => {
+//       log("Failed to find convo");
+//       res.status(404).send();
+//       return;
+//     });
+// });
 
 // A route to get all convos
 app.get("/api/convos", (req, res) => {
@@ -262,6 +273,49 @@ app.get("/api/convos", (req, res) => {
       res.status(500).send("Internal Server Error.");
       return;
     });
+});
+
+app.get("/api/convos/multiple", authenticate, (req, res) => {
+  const cur = req.session.user._id.toString();
+  const convoIDs = req.session.user.convos;
+  const map = new Map();
+  Convo.find({ _id: { $in: convoIDs } })
+    .then((convos) => {
+      // console.log(convos);
+      const recipients = convos.map((convo) => {
+        const recipient = convo.participants.filter(
+          (user) => user.toString() !== cur
+        )[0];
+        map[convo._id] = recipient;
+        // return recipient;
+        // User.findById(recipient)
+        //   .then((user) => {
+        //     return recipient;
+        //   })
+        //   .catch((error) => {
+        //     res.status(500).send("Internal Server Error.");
+        //   });
+      });
+      res.send({ convos: convos, recipients: map });
+      return;
+    })
+    .catch((error) => {
+      res.status(500).send("Internal Server Error.");
+      return;
+    });
+});
+
+app.get("/api/convos/:id", (req, res) => {
+  const id = req.params.id;
+  log(id);
+  Convo.findById(id).then(
+    (convo) => {
+      res.send(convo);
+    },
+    (error) => {
+      res.status(500).send(error); // server error
+    }
+  );
 });
 
 /*
@@ -340,7 +394,7 @@ app.use(express.static(__dirname + "/client/build"));
 // All routes other than above will go to index.html
 app.get("*", (req, res) => {
   // check for page routes that we expect in the frontend to provide correct status code.
-  const goodPageRoutes = ["/", "/login", "/dashboard"];
+  const goodPageRoutes = ["/", "chat", "/login", "register"];
   if (!goodPageRoutes.includes(req.url)) {
     // if url not in expected page routes, set status to 404.
     res.status(404);
